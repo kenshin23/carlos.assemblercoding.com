@@ -12,7 +12,12 @@
 <meta property="og:description" content="Tres patrones de fallas silenciosas en Django: un permiso desarmado por un renombre, una campaña contra N+1, y una compuerta de cobertura que no medía nada.">
 <meta property="og:type" content="website">
 <script>
-(function(){var l=null;try{l=localStorage.getItem("cp-lang")||localStorage.getItem("cs-lang")||localStorage.getItem("rd-lang");}catch(e){}
+(function(){var K="site-lang",l=null;try{l=localStorage.getItem(K);
+  if(!l){/* migrate the old per-page keys */
+    var old=["cp-lang","cs-lang","rd-lang"];
+    for(var i=0;i<old.length&&!l;i++){l=localStorage.getItem(old[i]);}
+    if(l){localStorage.setItem(K,l);}}
+}catch(e){}
 document.documentElement.setAttribute("data-lang",l||((navigator.language||"es").toLowerCase().indexOf("es")===0?"es":"en"));})();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -340,7 +345,7 @@ qs = Customer.objects.annotate(_tags=Coalesce(Subquery(tags), Value("")))</code>
 
 <script>
 (function () {
-  var root = document.documentElement, KEY = "cs-lang";
+  var root = document.documentElement, KEY = "site-lang";
   function apply(lang) {
     root.setAttribute("data-lang", lang);
     root.setAttribute("lang", lang);

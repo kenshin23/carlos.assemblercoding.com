@@ -12,7 +12,12 @@
 <meta property="og:description" content="Sistema de gestión de clínicas dentales en producción: Django 5.2, 922 commits, 17 apps, construido en solitario con agentes de IA.">
 <meta property="og:type" content="website">
 <script>
-(function(){var l=null;try{l=localStorage.getItem("cp-lang")||localStorage.getItem("cs-lang")||localStorage.getItem("rd-lang");}catch(e){}
+(function(){var K="site-lang",l=null;try{l=localStorage.getItem(K);
+  if(!l){/* migrate the old per-page keys */
+    var old=["cp-lang","cs-lang","rd-lang"];
+    for(var i=0;i<old.length&&!l;i++){l=localStorage.getItem(old[i]);}
+    if(l){localStorage.setItem(K,l);}}
+}catch(e){}
 document.documentElement.setAttribute("data-lang",l||((navigator.language||"es").toLowerCase().indexOf("es")===0?"es":"en"));})();
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -416,7 +421,7 @@ document.documentElement.setAttribute("data-lang",l||((navigator.language||"es")
 <script>
 (function () {
   var root = document.documentElement;
-  var KEY = "rd-lang";
+  var KEY = "site-lang";
   function apply(lang) {
     root.setAttribute("data-lang", lang);
     root.setAttribute("lang", lang);
