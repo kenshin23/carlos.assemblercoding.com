@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fallas silenciosas — Notas técnicas · Carlos Paparoni</title>
+<meta name="description" content="Tres patrones de fallas silenciosas en Django: un permiso desarmado por un renombre, una campaña contra N+1, y una compuerta de cobertura que no medía nada.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Fallas silenciosas — Notas técnicas · Carlos Paparoni">
+<meta property="og:description" content="Tres patrones de fallas silenciosas en Django: un permiso desarmado por un renombre, una campaña contra N+1, y una compuerta de cobertura que no medía nada.">
+<meta property="og:type" content="website">
+<script>
+(function(){var l=null;try{l=localStorage.getItem("cp-lang")||localStorage.getItem("cs-lang")||localStorage.getItem("rd-lang");}catch(e){}
+document.documentElement.setAttribute("data-lang",l||((navigator.language||"es").toLowerCase().indexOf("es")===0?"es":"en"));})();
+</script>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root{
+  --ground:#F7F8F6; --surface:#FFFFFF; --surface-2:#EDF1EF;
+  --ink:#16211F; --ink-2:#41504C; --ink-3:#6E7C79;
+  --rule:#D9E0DD; --rule-soft:#E7ECEA;
+  --accent:#0E6B62; --accent-ink:#0A544D; --accent-soft:#D6E7E3;
+  --flag:#A2472C; --flag-soft:#F0DED7;
+  --shadow:0 1px 2px rgba(22,33,31,.05), 0 8px 24px -16px rgba(22,33,31,.25);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1413; --surface:#16211F; --surface-2:#1D2A28;
+    --ink:#E6EEEB; --ink-2:#B2C1BD; --ink-3:#849490;
+    --rule:#2A3A37; --rule-soft:#21302D;
+    --accent:#6FC7B9; --accent-ink:#9BDDD2; --accent-soft:#1B3733;
+    --flag:#E09B7C; --flag-soft:#3A2119;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1413; --surface:#16211F; --surface-2:#1D2A28;
+  --ink:#E6EEEB; --ink-2:#B2C1BD; --ink-3:#849490;
+  --rule:#2A3A37; --rule-soft:#21302D;
+  --accent:#6FC7B9; --accent-ink:#9BDDD2; --accent-soft:#1B3733;
+  --flag:#E09B7C; --flag-soft:#3A2119;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+html{ -webkit-text-size-adjust:100% }
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:17px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px; margin:0 auto; padding:0 28px}
+.col{max-width:640px}
+h1,h2,h3{font-family:"IBM Plex Serif",Georgia,serif; text-wrap:balance; margin:0}
+h1{font-size:clamp(2.4rem,5.4vw,3.6rem); font-weight:600; line-height:1.08; letter-spacing:-.015em}
+h2{font-size:clamp(1.5rem,2.6vw,1.95rem); font-weight:600; line-height:1.2; letter-spacing:-.01em}
+h3{font-size:1.08rem; font-weight:600; line-height:1.35}
+p{margin:0 0 1.1em}
+a{color:var(--accent-ink); text-underline-offset:3px; text-decoration-thickness:1px}
+a:focus-visible,.tooth:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+strong{font-weight:600; color:var(--ink)}
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.68rem; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3);
+  display:flex; align-items:center; gap:.7em; margin:0 0 1.1rem;
+}
+.eyebrow::after{content:""; flex:1; height:1px; background:var(--rule)}
+.lede{font-size:1.2rem; line-height:1.55; color:var(--ink-2)}
+
+/* ---- header ---- */
+header{border-bottom:1px solid var(--rule); background:var(--surface)}
+.head-inner{display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; justify-content:space-between; padding:20px 0}
+.mark{font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-2)}
+.mark b{color:var(--accent-ink); font-weight:600}
+.head-meta{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--ink-3); letter-spacing:.04em}
+
+/* ---- hero ---- */
+.hero{padding:76px 0 8px}
+.hero h1{margin-bottom:22px}
+.hero .lede{max-width:600px}
+.byline{
+  font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:26px;
+}
+
+/* ---- odontogram strip ---- */
+.chart{margin:52px 0 0; padding:26px 0 30px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule)}
+.chart-cap{
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:18px;
+}
+.arch{display:flex; gap:6px; overflow-x:auto; padding-bottom:6px}
+.tooth{
+  flex:0 0 auto; width:46px; border:1px solid var(--rule); border-radius:3px;
+  background:var(--surface); padding:6px 0 5px; text-align:center;
+  font-family:"IBM Plex Mono",monospace; opacity:0; transform:translateY(6px);
+  animation:rise .5s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes rise{to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){.tooth{animation:none; opacity:1; transform:none}}
+.fdi{display:block; font-size:.7rem; color:var(--ink-3); letter-spacing:.06em}
+.surf{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; margin:5px 4px 0}
+.surf i{height:9px; background:var(--surface-2); border-radius:1px; font-style:normal}
+.tooth.marked{border-color:var(--accent); background:var(--accent-soft)}
+.tooth.marked .fdi{color:var(--accent-ink)}
+.tooth.marked i.on{background:var(--accent)}
+.legend{
+  margin-top:16px; font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+  color:var(--ink-3); line-height:1.8;
+}
+.legend b{color:var(--ink-2); font-weight:500}
+
+/* ---- stats ---- */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:4px; overflow:hidden; margin:44px 0}
+.stat{background:var(--surface); padding:18px 20px}
+.stat .n{font-family:"IBM Plex Mono",monospace; font-size:1.5rem; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.stat .l{font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-top:4px}
+
+section{padding:46px 0}
+section + section{border-top:1px solid var(--rule-soft)}
+
+.note{
+  border-left:2px solid var(--accent); background:var(--surface); padding:16px 20px;
+  margin:26px 0; border-radius:0 4px 4px 0; box-shadow:var(--shadow);
+}
+.note p:last-child{margin-bottom:0}
+.note .h{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); margin-bottom:8px}
+
+.tblwrap{overflow-x:auto; margin:26px 0}
+table{border-collapse:collapse; width:100%; font-size:.92rem; min-width:520px}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule-soft); vertical-align:top}
+th{font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); font-weight:500; border-bottom:1px solid var(--rule)}
+td code{font-family:"IBM Plex Mono",monospace; font-size:.84em; color:var(--ink-2)}
+.chip{
+  display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:.64rem;
+  letter-spacing:.1em; text-transform:uppercase; padding:2px 7px; border-radius:2px;
+  background:var(--accent-soft); color:var(--accent-ink); white-space:nowrap;
+}
+.chip.flag{background:var(--flag-soft); color:var(--flag)}
+
+ul.tight{margin:0 0 1.1em; padding-left:1.1em}
+ul.tight li{margin-bottom:.5em}
+ul.tight li::marker{color:var(--accent)}
+
+.pair{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:26px; margin:26px 0}
+.card{background:var(--surface); border:1px solid var(--rule); border-radius:4px; padding:20px 22px; box-shadow:var(--shadow)}
+.card h3{margin-bottom:8px}
+.card p{font-size:.94rem; color:var(--ink-2); margin-bottom:0}
+
+
+.figure{max-width:820px; margin:34px 0 10px}
+.plate{
+  background:#FFFFFF; border:1px solid var(--rule); border-radius:5px;
+  padding:14px; box-shadow:var(--shadow); line-height:0;
+}
+.plate img{width:100%; height:auto; display:block; border-radius:2px}
+.figcap{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; line-height:1.7;
+  color:var(--ink-3); margin-top:12px; letter-spacing:.02em; max-width:640px;
+}
+.figcap b{color:var(--ink-2); font-weight:500}
+footer{border-top:1px solid var(--rule); padding:34px 0 60px; color:var(--ink-3); font-size:.88rem}
+footer .mono{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.06em}
+
+.langbar{position:sticky; top:0; z-index:40; background:var(--surface); border-bottom:1px solid var(--rule)}
+.langbar .wrap{display:flex; justify-content:flex-end; padding:8px 28px}
+.langset{display:inline-flex; border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.langset button{
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em;
+  text-transform:uppercase; padding:5px 12px; border:0; cursor:pointer;
+  background:var(--surface); color:var(--ink-3); transition:background .15s, color .15s;
+}
+.langset button + button{border-left:1px solid var(--rule)}
+.langset button:hover{color:var(--ink)}
+.langset button[aria-pressed="true"]{background:var(--accent); color:#fff}
+:root:not([data-lang="en"]) [data-langblock="en"]{display:none}
+:root[data-lang="en"] [data-langblock="es"]{display:none}
+@media (prefers-reduced-motion:reduce){.langset button{transition:none}}
+
+.codewrap{margin:26px 0; overflow-x:auto; border:1px solid var(--rule); border-radius:4px; background:var(--surface); box-shadow:var(--shadow)}
+pre{margin:0; padding:18px 20px; min-width:520px}
+code{font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.82rem; line-height:1.75; color:var(--ink)}
+p code, li code, td code{background:var(--surface-2); padding:1px 5px; border-radius:2px; font-size:.85em; color:var(--ink-2)}
+pre code .c{color:var(--ink-3); font-style:italic}
+.stats .l{text-transform:none; letter-spacing:.02em; font-size:.72rem; line-height:1.45}
+.stats .n{color:var(--accent-ink)}
+section h3{margin:30px 0 10px}
+.langbar{position:sticky; top:0; z-index:40; background:var(--surface); border-bottom:1px solid var(--rule)}
+.langbar .wrap{display:flex; justify-content:flex-end; padding:8px 28px}
+.langset{display:inline-flex; border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.langset button{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em;
+  text-transform:uppercase; padding:5px 12px; border:0; cursor:pointer; background:var(--surface);
+  color:var(--ink-3); transition:background .15s, color .15s}
+.langset button + button{border-left:1px solid var(--rule)}
+.langset button:hover{color:var(--ink)}
+.langset button[aria-pressed="true"]{background:var(--accent); color:#fff}
+:root:not([data-lang="en"]) [data-langblock="en"]{display:none}
+:root[data-lang="en"] [data-langblock="es"]{display:none}
+@media (prefers-reduced-motion:reduce){.langset button{transition:none}}
+.mark .home{color:inherit; text-decoration:none}
+.mark .home:hover{color:var(--accent-ink)}
+</style>
+
+<div class="langbar">
+  <div class="wrap">
+    <div class="langset" role="group" aria-label="Idioma / Language">
+      <button type="button" data-setlang="es" aria-pressed="true" lang="es">Español</button>
+      <button type="button" data-setlang="en" aria-pressed="false" lang="en">English</button>
+    </div>
+  </div>
+</div>
+
+<div data-langblock="es" lang="es"><header>
+  <div class="wrap head-inner">
+    <div class="mark"><a class="home" href="/">&larr; Carlos&nbsp;Paparoni</a> </a>&nbsp;·&nbsp; <b>AssemblerCoding</b></div>
+    <div class="head-meta">Tres fallas que no dejaron ningún mensaje de error</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="byline">Notas de campo &nbsp;/&nbsp; Django · PostgreSQL · CI</div>
+    <h1>Los peores errores no lanzan nada. Simplemente dejan de funcionar en silencio.</h1>
+    <p class="lede col">Tres patrones de cuatro años dentro de una plataforma privada de administración de fondos — unos 11.000 commits, un equipo de siete personas, quince años de historia acumulada. Un permiso que se desactivó solo, consultas que se multiplicaron sin que nadie lo notara, y una compuerta de cobertura que había dejado de medir cualquier cosa. Los detalles del cliente se omiten; lo que se transfiere es el patrón.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">01</div><div class="l">Un renombre desarmó un permiso</div></div>
+    <div class="stat"><div class="n">02</div><div class="l">N+1, encontrados con método</div></div>
+    <div class="stat"><div class="n">03</div><div class="l">Una compuerta que aprobaba todo</div></div>
+  </div>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">01 — Control de acceso</p>
+      <h2>Una anotación de queryset desactivó un permiso de campo</h2>
+      <p>La plataforma enmascaraba campos sensibles por configuración y no por código: una estructura JSON nombraba los modelos y campos sensibles, y un mixin la consultaba al renderizar, verificando si el usuario actual tenía el permiso correspondiente a ese campo.</p>
+      <p>Esa indirección es buen diseño. También significa que <strong>el control de seguridad calza contra una cadena de texto</strong> — y una cadena es algo que una refactorización ajena puede cambiar.</p>
+      <p>Más tarde una columna se renombró a una anotación calculada, para que el valor ordenable incluyera un sufijo. Cambio razonable, revisado, desplegado. Pero la capa de enmascaramiento buscaba la expresión de valor de la columna dentro de la lista de campos sensibles, y el nombre de la anotación no estaba ahí. Sin excepción, sin advertencia, sin prueba en rojo. El campo simplemente se mostró en claro a usuarios que nunca tuvieron permiso para verlo.</p>
+    </div>
+
+    <div class="codewrap col">
+      <pre><code><span class="c"># El control depende de un nombre...</span>
+SENSIBLES = {"Cliente": {"razon_social": {"ui": "total"}}}
+
+<span class="c"># ...y esta refactorización lo saca del alcance.</span>
+<span class="c"># Antes — calza con SENSIBLES["Cliente"]["razon_social"]</span>
+columnas = {"Razón social": "razon_social"}
+
+<span class="c"># Después — ordena bien, no enmascara nada, no lanza nada</span>
+qs = qs.annotate(razon_social_display=Concat("razon_social", V(" "), "sufijo"))
+columnas = {"Razón social": "razon_social_display"}</code></pre>
+    </div>
+
+    <div class="col">
+      <h3>Por qué es una clase de error y no un incidente</h3>
+      <p>Cada superficie enmascarada del sistema estaba a un renombre de correr la misma suerte, y nada en el código lo habría advertido. El framework no tiene forma de saber que <code>razon_social_display</code> deriva de un campo protegido: esa relación existe solo en la cabeza de quien programa.</p>
+      <p>La corrección que importa no es parchar esa columna. Es hacer que la falla sea <em>ruidosa</em>:</p>
+      <ul class="tight">
+        <li><strong>Afirmar sobre el conjunto, no sobre los miembros.</strong> Una prueba que verifica "esta columna está enmascarada" sigue pasando para siempre mientras se filtran diez columnas nuevas. Una prueba que afirma el conjunto completo de columnas enmascaradas para un usuario sin privilegios falla en cuanto ese conjunto cambia — incluso cuando cambia por accidente.</li>
+        <li><strong>Tratar las columnas derivadas como contaminadas.</strong> Si una anotación lee un campo protegido, la anotación está protegida. Declarar esa relación de forma explícita para que la verificación pueda seguirla.</li>
+        <li><strong>Probar el caso negativo.</strong> Casi todas las pruebas de permisos verifican que el usuario autorizado ve el dato. La afirmación interesante es la contraria.</li>
+      </ul>
+      <div class="note">
+        <div class="h">Regla transferible</div>
+        <p>Un control de seguridad que calza contra un identificador es tan fuerte como la estabilidad de ese identificador — y los identificadores los refactoriza gente que no tiene idea de que un permiso depende de ellos. Si un renombre puede desarmar la verificación, la verificación necesita una prueba que vigile el límite, no el caso puntual.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">02 — Rendimiento</p>
+      <h2>Buscar consultas N+1 a propósito en lugar de por casualidad</h2>
+      <p>A lo largo de aproximadamente un año cerré unos veinte tickets de N+1 y consultas lentas en búsquedas de inversionistas, creación de flujos de capital, exportaciones CSV, una ruta de ingesta desde Salesforce y una traza de auditoría. Tratarlos como veinte errores sin relación habría significado veinte investigaciones. Tratarlos como un solo problema produjo un procedimiento repetible.</p>
+
+      <h3>El ciclo</h3>
+      <ul class="tight">
+        <li><strong>Capturar.</strong> <code>pg_stat_statements</code> vía PGHero, ordenando por tiempo total y no por promedio — la consulta que más cuesta suele ser barata y ejecutarse todo el tiempo. Reiniciar estadísticas, ejercitar el flujo, volver a leer.</li>
+        <li><strong>Reproducir.</strong> <code>shell_plus --print-sql</code> para una cadena del ORM; la barra de depuración cuando importa el contexto de la petición.</li>
+        <li><strong>Diagnosticar.</strong> <code>EXPLAIN (ANALYZE, BUFFERS)</code>, leyendo señales concretas: recorridos secuenciales sobre tablas grandes, estimaciones de filas muy lejos de las reales, ordenamientos que se derraman a disco y multiplicación de filas tras un join muchos-a-muchos.</li>
+        <li><strong>Corregir y verificar que el plan cambió</strong> — no solo que la página se sintió más rápida.</li>
+      </ul>
+
+      <h3>Dos correcciones cubrieron casi todo</h3>
+      <p><strong>Una anotación muchos-a-muchos inflando la consulta externa.</strong> Agregar sobre un M2M en el nivel superior fuerza un join, el join multiplica filas y el ORM lo compensa con un <code>DISTINCT</code> sobre todo el resultado. Mover la agregación a una subconsulta correlacionada mantiene el join dentro de la subconsulta y la consulta externa limpia.</p>
+    </div>
+
+    <div class="codewrap col">
+      <pre><code><span class="c"># Multiplicación de filas y luego un DISTINCT para deshacerla</span>
+qs = Cliente.objects.annotate(_etq=StringAgg("etiquetas__nombre", ", "))
+
+<span class="c"># Subconsulta correlacionada — la consulta externa queda plana</span>
+etq = (Etiqueta.objects.filter(clientes=OuterRef("id"))
+       .order_by().values("clientes")
+       .annotate(v=StringAgg("nombre", ", ", distinct=True, default=""))
+       .values("v"))
+qs = Cliente.objects.annotate(_etq=Coalesce(Subquery(etq), Value("")))</code></pre>
+    </div>
+
+    <div class="col">
+      <p><strong>La serialización recorriendo relaciones.</strong> Cualquier cosa que renderice una fila completa — <code>model_to_dict</code>, un constructor de columnas de exportación, una instantánea de auditoría — atraviesa todas las relaciones que encuentra. Una consulta por fila por relación, invisible hasta que la tabla crece.</p>
+
+      <h3>Dejar la corrección asegurada</h3>
+      <p>Una prueba de regresión que afirma un número exacto de consultas es frágil: falla ante cualquier cambio ajeno. La afirmación duradera es la <strong>invariancia</strong>: el número de consultas no debe crecer cuando crece el número de filas.</p>
+      <p>Dos cosas que me costaron tiempo, y vale decirlas sin rodeos:</p>
+      <ul class="tight">
+        <li><strong>Perfilar contra un volcado real anonimizado.</strong> Una base de datos de prueba pequeña esconde justo la latencia que uno busca; los planes cambian de forma a volúmenes de producción.</li>
+        <li><strong>Que un error deje de aparecer no prueba que esté corregido.</strong> Reescribir una consulta la mueve a una huella nueva en el rastreador de errores, así que el incidente viejo deja de dispararse haya mejorado o no. Verificar con tiempos medidos de iteración, no viendo un tablero quedarse en silencio.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">03 — Pruebas</p>
+      <h2>La compuerta de cobertura que aprobaría un PR sin pruebas</h2>
+      <p>Migré 272 archivos de prueba a árboles separados de <code>unit/</code> e <code>integration/</code>, dividí CI en trabajos paralelos y agregué reporte de cobertura — un objetivo que el equipo arrastraba sin cumplir desde hacía un año. El frontend adoptó después la misma estructura. Esa parte salió bien, y no es la parte interesante.</p>
+      <p>Lo interesante es que la compuerta resultante no hacía lo que todos creían que hacía.</p>
+
+      <h3>Falla uno: un total no dice nada sobre el diff</h3>
+      <p>CI bloqueaba un pull request cuando la cobertura <em>total</em> caía por debajo de un umbral. En una base de código grande, código nuevo sin pruebas apenas mueve el total — así que un PR podía agregar cientos de líneas sin probar y pasar en verde. La compuerta medía la historia del repositorio, no el cambio bajo revisión.</p>
+      <p>La corrección es medir el diff: cruzar el reporte de cobertura contra <code>git diff</code> y fallar cuando las <em>líneas modificadas</em> quedan bajo el umbral. Además traslada la discusión de "nuestra cobertura es baja" a "este cambio no está probado", que es una conversación que un revisor sí puede tener.</p>
+
+      <h3>Falla dos: activar cobertura de ramas mueve la compuerta en silencio</h3>
+      <p>El comentario de CI reportaba cobertura de ramas como <code>N/A%</code>. Activarla parece un cambio de una línea de configuración. No lo es: la verificación del umbral compara contra un único porcentaje mezclado, así que agregar ramas al denominador cambia el número que la compuerta está comparando. Medido sobre las suites reales:</p>
+    </div>
+
+    <div class="tblwrap col">
+      <table>
+        <thead><tr><th>Suite</th><th>Archivos</th><th>Líneas</th><th>Ramas</th><th>Mezclado</th><th>Compuerta</th></tr></thead>
+        <tbody>
+          <tr><td>Unitarias</td><td>495</td><td>82,18%</td><td>62,56%</td><td><strong>78,58%</strong></td><td>80% <span class="chip flag">fallaría</span></td></tr>
+          <tr><td>Integración</td><td>583</td><td>77,84%</td><td>50,07%</td><td><strong>72,94%</strong></td><td>76% <span class="chip flag">fallaría</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <p>Si se activa la bandera sin recalibrar, CI se pone en rojo sobre una base de código que no cambió. Si se activa en el otro sentido — una suite que omite vistas, admin y módulos de tareas mide menos archivos y puntúa más alto — la compuerta se vuelve más laxa en silencio mientras el número de la insignia sube.</p>
+      <div class="note">
+        <div class="h">Regla transferible</div>
+        <p>Una compuerta de cobertura mide exactamente lo que uno configuró que midiera, que rara vez es lo que el equipo cree que mide. Antes de confiar en un umbral, preguntar qué hay en el denominador, si cubre el cambio o el repositorio, y qué le pasa al número si alguien mueve una bandera. Una compuerta que nadie ha auditado es un rito, no un control.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">El hilo común</p>
+      <h2>Qué tienen en común estas tres</h2>
+      <p>Ninguna lanzó un error. El permiso devolvió datos, las consultas devolvieron filas, el pipeline devolvió verde. Cada falla se veía exactamente igual que el éxito desde afuera, y cada una apareció porque alguien decidió ir a mirar.</p>
+      <p>Ese es el argumento a favor de las pasadas adversariales sobre el trabajo propio: auditar la capa de enmascaramiento, perfilar contra datos reales, leer la configuración de CI en vez de confiar en la insignia. Las fallas que se anuncian solas son las baratas.</p>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="mono">Carlos Paparoni · Ingeniero backend · Django, PostgreSQL, sistemas con datos intensivos · AssemblerCoding LLC</div>
+    <p style="margin-top:10px">Escrito como patrones transferibles. Los detalles de cliente, esquema y sistema se omiten deliberadamente; aquí no se describe ningún problema sin corregir.</p>
+  </div>
+</footer>
+</div>
+<div data-langblock="en" lang="en"><header>
+  <div class="wrap head-inner">
+    <div class="mark"><a class="home" href="/">&larr; Carlos&nbsp;Paparoni</a> </a>&nbsp;·&nbsp; <b>AssemblerCoding</b></div>
+    <div class="head-meta">Three failures that left no error message</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="byline">Field notes &nbsp;/&nbsp; Django · PostgreSQL · CI</div>
+    <h1>The worst bugs don't raise anything. They just quietly stop working.</h1>
+    <p class="lede col">Three patterns from four years inside a private fund-administration platform — roughly 11,000 commits, a seven-person team, fifteen years of accumulated history. A permission that switched itself off, queries that multiplied without anyone noticing, and a coverage gate that had stopped measuring anything. Client details are omitted throughout; what transfers is the pattern.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">01</div><div class="l">A rename disarmed a permission</div></div>
+    <div class="stat"><div class="n">02</div><div class="l">N+1s, found systematically</div></div>
+    <div class="stat"><div class="n">03</div><div class="l">A coverage gate that passed everything</div></div>
+  </div>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">01 — Access control</p>
+      <h2>A queryset annotation switched off a field permission</h2>
+      <p>The platform masked sensitive fields through configuration rather than code: a JSON structure named the models and fields that were sensitive, and a mixin consulted it at render time, checking whether the current user held the matching per-field permission.</p>
+      <p>That indirection is good design. It also means <strong>the security control matches on a string</strong> — and a string is something an unrelated refactor can change.</p>
+      <p>A column was later renamed to a computed annotation, so the sorted value could include a suffix. Reasonable change, reviewed, shipped. But the masking layer looked up the column's value expression against the sensitive-field list, and the annotation's name wasn't in it. No exception, no warning, no failing test. The field simply rendered in the clear for users who had never been granted permission to see it.</p>
+    </div>
+
+    <div class="codewrap col">
+      <pre><code><span class="c"># The control is keyed on a name...</span>
+SENSITIVE = {"Customer": {"legal_name": {"ui": "total"}}}
+
+<span class="c"># ...and this refactor renames it out of scope.</span>
+<span class="c"># Before — matches SENSITIVE["Customer"]["legal_name"]</span>
+columns = {"Legal Name": "legal_name"}
+
+<span class="c"># After — sorts correctly, masks nothing, raises nothing</span>
+qs = qs.annotate(legal_name_display=Concat("legal_name", V(" "), "suffix"))
+columns = {"Legal Name": "legal_name_display"}</code></pre>
+    </div>
+
+    <div class="col">
+      <h3>What makes it a class, not an incident</h3>
+      <p>Every masked surface in the system was one rename away from the same fate, and nothing in the codebase would have said so. The framework has no way to know that <code>legal_name_display</code> is derived from a protected field — the relationship exists only in the developer's head.</p>
+      <p>The fix that matters is not patching the one column. It is making the failure <em>loud</em>:</p>
+      <ul class="tight">
+        <li><strong>Assert on the set, not the members.</strong> A test that checks "this column is masked" passes forever while ten new columns leak. A test that asserts the complete set of masked columns for an unprivileged user fails the moment the set changes — including when it changes by accident.</li>
+        <li><strong>Treat derived columns as tainted.</strong> If an annotation reads a protected field, the annotation is protected. Declare that relationship explicitly so the check can follow it.</li>
+        <li><strong>Test the negative case.</strong> Most permission tests assert that the permitted user sees the data. The interesting assertion is the other one.</li>
+      </ul>
+      <div class="note">
+        <div class="h">Transferable rule</div>
+        <p>A security control that matches on an identifier is only as strong as that identifier's stability — and identifiers are refactored by people who have no idea a permission depends on them. If a rename can disarm your check, the check needs a test that watches the boundary, not the instance.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">02 — Performance</p>
+      <h2>Finding N+1 queries on purpose instead of by accident</h2>
+      <p>Over about a year I closed roughly twenty N+1 and slow-query tickets across investor lookups, capital-flow creation, CSV exports, a Salesforce ingest path and an audit trail. Treating them as twenty unrelated bugs would have taken twenty investigations. Treating them as one problem produced a repeatable procedure.</p>
+
+      <h3>The loop</h3>
+      <ul class="tight">
+        <li><strong>Capture.</strong> <code>pg_stat_statements</code> through PGHero, sorted by total time rather than mean — the query that costs you the most is usually cheap and run constantly. Reset stats, exercise the flow, read again.</li>
+        <li><strong>Reproduce.</strong> <code>shell_plus --print-sql</code> for an ORM chain, the debug toolbar when in-request context matters.</li>
+        <li><strong>Diagnose.</strong> <code>EXPLAIN (ANALYZE, BUFFERS)</code>, reading for a specific set of signals: sequential scans on large tables, row estimates far off actual, sorts spilling to disk, and row multiplication after a many-to-many join.</li>
+        <li><strong>Fix, then verify the plan changed</strong> — not just that the page felt faster.</li>
+      </ul>
+
+      <h3>Two fixes covered most of it</h3>
+      <p><strong>A many-to-many annotation inflating the outer query.</strong> Aggregating across an M2M at the top level forces a join, the join multiplies rows, and the ORM compensates with <code>DISTINCT</code> over the whole result. Moving the aggregate into a correlated subquery keeps the join inside the subquery and the outer query clean.</p>
+    </div>
+
+    <div class="codewrap col">
+      <pre><code><span class="c"># Row multiplication, then a DISTINCT to undo it</span>
+qs = Customer.objects.annotate(_tags=StringAgg("tags__name", ", "))
+
+<span class="c"># Correlated subquery — outer query stays flat</span>
+tags = (Tag.objects.filter(customers=OuterRef("id"))
+        .order_by().values("customers")
+        .annotate(v=StringAgg("name", ", ", distinct=True, default=""))
+        .values("v"))
+qs = Customer.objects.annotate(_tags=Coalesce(Subquery(tags), Value("")))</code></pre>
+    </div>
+
+    <div class="col">
+      <p><strong>Serialization walking relations.</strong> Anything that renders a whole row — <code>model_to_dict</code>, an export column builder, an audit snapshot — traverses every relation it finds. One query per row per relation, invisible until the table grows.</p>
+
+      <h3>Locking the fix in</h3>
+      <p>A regression test that asserts an exact query count is brittle: it fails on every unrelated change. The durable assertion is <strong>invariance</strong> — the query count must not grow when the row count grows.</p>
+      <p>Two things that cost me time, worth stating plainly:</p>
+      <ul class="tight">
+        <li><strong>Profile against a real anonymized dump.</strong> A small test database hides the latency you are hunting; plans change shape at production volumes.</li>
+        <li><strong>An error going quiet is not proof of a fix.</strong> Reshaping a query moves it to a new fingerprint in the error tracker, so the old issue stops firing whether or not it got faster. Verify with measured iteration timing, not by watching a dashboard go silent.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">03 — Testing</p>
+      <h2>The coverage gate that would pass a PR with no tests</h2>
+      <p>I migrated 272 test files into separate <code>unit/</code> and <code>integration/</code> trees, split CI into parallel jobs, and added coverage reporting — an objective the team had carried unmet for a year. The frontend adopted the same structure afterwards. That part went well, and it is not the interesting part.</p>
+      <p>The interesting part is that the gate it produced did not do what everyone believed it did.</p>
+
+      <h3>Failure one: a total says nothing about the diff</h3>
+      <p>CI blocked a pull request when <em>overall</em> coverage fell below a threshold. On a large codebase, new code with zero tests barely moves the total — so a PR could add hundreds of untested lines and pass a green check. The gate measured the codebase's history, not the change under review.</p>
+      <p>The fix is to measure the diff: cross-reference the coverage report against <code>git diff</code> and fail on <em>changed lines</em> below threshold. It also relocates the argument from "our coverage is too low" to "this change is untested," which is a conversation a reviewer can actually have.</p>
+
+      <h3>Failure two: turning on branch coverage silently moves the gate</h3>
+      <p>The CI comment reported branch coverage as <code>N/A%</code>. Enabling it looks like a one-line config change. It isn't: the threshold check compares against a single blended percentage, so adding branches to the denominator changes the number the gate is comparing. Measured on the real suites:</p>
+    </div>
+
+    <div class="tblwrap col">
+      <table>
+        <thead><tr><th>Suite</th><th>Files</th><th>Line</th><th>Branch</th><th>Blended</th><th>Gate</th></tr></thead>
+        <tbody>
+          <tr><td>Unit</td><td>495</td><td>82.18%</td><td>62.56%</td><td><strong>78.58%</strong></td><td>80% <span class="chip flag">would fail</span></td></tr>
+          <tr><td>Integration</td><td>583</td><td>77.84%</td><td>50.07%</td><td><strong>72.94%</strong></td><td>76% <span class="chip flag">would fail</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="col">
+      <p>Flip the flag without re-baselining and CI goes red on an unchanged codebase. Flip it in the other direction — a suite that omits views, admin and task modules measures fewer files and scores higher — and the gate quietly gets easier while the number on the badge goes up.</p>
+      <div class="note">
+        <div class="h">Transferable rule</div>
+        <p>A coverage gate measures exactly what you configured it to measure, which is rarely what the team thinks it measures. Before trusting a threshold, ask what is in the denominator, whether it covers the change or the codebase, and what happens to the number if someone toggles a flag. A gate nobody has audited is a ritual, not a control.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">The through-line</p>
+      <h2>What these three have in common</h2>
+      <p>None of them raised an error. The permission returned data, the queries returned rows, the pipeline returned green. Each failure looked exactly like success from the outside, and each was found by someone deciding to go and look.</p>
+      <p>That is the argument for adversarial passes over your own work — auditing the masking layer, profiling against real data, reading the CI config instead of trusting the badge. The failures that announce themselves are the cheap ones.</p>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="mono">Carlos Paparoni · Backend engineer · Django, PostgreSQL, data-heavy systems · AssemblerCoding LLC</div>
+    <p style="margin-top:10px">Written as transferable patterns. Client, schema and system details are deliberately omitted; no unremediated issue is described here.</p>
+  </div>
+</footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement, KEY = "cs-lang";
+  function apply(lang) {
+    root.setAttribute("data-lang", lang);
+    root.setAttribute("lang", lang);
+    document.querySelectorAll("[data-setlang]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.setlang === lang));
+    });
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  apply(saved || ((navigator.language || "es").toLowerCase().indexOf("es") === 0 ? "es" : "en"));
+  document.querySelectorAll("[data-setlang]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      apply(b.dataset.setlang);
+      try { localStorage.setItem(KEY, b.dataset.setlang); } catch (e) {}
+      window.scrollTo({ top: 0, behavior: "instant" });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

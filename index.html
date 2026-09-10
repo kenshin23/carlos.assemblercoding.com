@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carlos Paparoni — Ingeniero backend Django</title>
+<meta name="description" content="Ingeniero backend con dieciocho años construyendo software: Django, PostgreSQL y sistemas con datos intensivos. Disponible para contratos y acompañamiento.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Ctext%20y%3D%22.9em%22%20font-size%3D%2290%22%3E%E2%8C%98%3C/text%3E%3C/svg%3E">
+<meta name="color-scheme" content="light dark">
+<meta property="og:title" content="Carlos Paparoni — Ingeniero backend Django">
+<meta property="og:description" content="Ingeniero backend con dieciocho años construyendo software: Django, PostgreSQL y sistemas con datos intensivos. Disponible para contratos y acompañamiento.">
+<meta property="og:type" content="website">
+<script>
+(function(){var l=null;try{l=localStorage.getItem("cp-lang")||localStorage.getItem("cs-lang")||localStorage.getItem("rd-lang");}catch(e){}
+document.documentElement.setAttribute("data-lang",l||((navigator.language||"es").toLowerCase().indexOf("es")===0?"es":"en"));})();
+</script>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+:root{
+  --ground:#F7F8F6; --surface:#FFFFFF; --surface-2:#EDF1EF;
+  --ink:#16211F; --ink-2:#41504C; --ink-3:#6E7C79;
+  --rule:#D9E0DD; --rule-soft:#E7ECEA;
+  --accent:#0E6B62; --accent-ink:#0A544D; --accent-soft:#D6E7E3;
+  --flag:#A2472C; --flag-soft:#F0DED7;
+  --shadow:0 1px 2px rgba(22,33,31,.05), 0 8px 24px -16px rgba(22,33,31,.25);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0D1413; --surface:#16211F; --surface-2:#1D2A28;
+    --ink:#E6EEEB; --ink-2:#B2C1BD; --ink-3:#849490;
+    --rule:#2A3A37; --rule-soft:#21302D;
+    --accent:#6FC7B9; --accent-ink:#9BDDD2; --accent-soft:#1B3733;
+    --flag:#E09B7C; --flag-soft:#3A2119;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0D1413; --surface:#16211F; --surface-2:#1D2A28;
+  --ink:#E6EEEB; --ink-2:#B2C1BD; --ink-3:#849490;
+  --rule:#2A3A37; --rule-soft:#21302D;
+  --accent:#6FC7B9; --accent-ink:#9BDDD2; --accent-soft:#1B3733;
+  --flag:#E09B7C; --flag-soft:#3A2119;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+html{ -webkit-text-size-adjust:100% }
+body{
+  margin:0; background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:17px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px; margin:0 auto; padding:0 28px}
+.col{max-width:640px}
+h1,h2,h3{font-family:"IBM Plex Serif",Georgia,serif; text-wrap:balance; margin:0}
+h1{font-size:clamp(2.4rem,5.4vw,3.6rem); font-weight:600; line-height:1.08; letter-spacing:-.015em}
+h2{font-size:clamp(1.5rem,2.6vw,1.95rem); font-weight:600; line-height:1.2; letter-spacing:-.01em}
+h3{font-size:1.08rem; font-weight:600; line-height:1.35}
+p{margin:0 0 1.1em}
+a{color:var(--accent-ink); text-underline-offset:3px; text-decoration-thickness:1px}
+a:focus-visible,.tooth:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+strong{font-weight:600; color:var(--ink)}
+.eyebrow{
+  font-family:"IBM Plex Mono",ui-monospace,monospace; font-size:.68rem; font-weight:500;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--ink-3);
+  display:flex; align-items:center; gap:.7em; margin:0 0 1.1rem;
+}
+.eyebrow::after{content:""; flex:1; height:1px; background:var(--rule)}
+.lede{font-size:1.2rem; line-height:1.55; color:var(--ink-2)}
+
+/* ---- header ---- */
+header{border-bottom:1px solid var(--rule); background:var(--surface)}
+.head-inner{display:flex; flex-wrap:wrap; gap:12px; align-items:baseline; justify-content:space-between; padding:20px 0}
+.mark{font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-2)}
+.mark b{color:var(--accent-ink); font-weight:600}
+.head-meta{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--ink-3); letter-spacing:.04em}
+
+/* ---- hero ---- */
+.hero{padding:76px 0 8px}
+.hero h1{margin-bottom:22px}
+.hero .lede{max-width:600px}
+.byline{
+  font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:26px;
+}
+
+/* ---- odontogram strip ---- */
+.chart{margin:52px 0 0; padding:26px 0 30px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule)}
+.chart-cap{
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--ink-3); margin-bottom:18px;
+}
+.arch{display:flex; gap:6px; overflow-x:auto; padding-bottom:6px}
+.tooth{
+  flex:0 0 auto; width:46px; border:1px solid var(--rule); border-radius:3px;
+  background:var(--surface); padding:6px 0 5px; text-align:center;
+  font-family:"IBM Plex Mono",monospace; opacity:0; transform:translateY(6px);
+  animation:rise .5s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes rise{to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){.tooth{animation:none; opacity:1; transform:none}}
+.fdi{display:block; font-size:.7rem; color:var(--ink-3); letter-spacing:.06em}
+.surf{display:grid; grid-template-columns:repeat(3,1fr); gap:1px; margin:5px 4px 0}
+.surf i{height:9px; background:var(--surface-2); border-radius:1px; font-style:normal}
+.tooth.marked{border-color:var(--accent); background:var(--accent-soft)}
+.tooth.marked .fdi{color:var(--accent-ink)}
+.tooth.marked i.on{background:var(--accent)}
+.legend{
+  margin-top:16px; font-family:"IBM Plex Mono",monospace; font-size:.7rem;
+  color:var(--ink-3); line-height:1.8;
+}
+.legend b{color:var(--ink-2); font-weight:500}
+
+/* ---- stats ---- */
+.stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(148px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:4px; overflow:hidden; margin:44px 0}
+.stat{background:var(--surface); padding:18px 20px}
+.stat .n{font-family:"IBM Plex Mono",monospace; font-size:1.5rem; font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; letter-spacing:-.02em}
+.stat .l{font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); margin-top:4px}
+
+section{padding:46px 0}
+section + section{border-top:1px solid var(--rule-soft)}
+
+.note{
+  border-left:2px solid var(--accent); background:var(--surface); padding:16px 20px;
+  margin:26px 0; border-radius:0 4px 4px 0; box-shadow:var(--shadow);
+}
+.note p:last-child{margin-bottom:0}
+.note .h{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); margin-bottom:8px}
+
+.tblwrap{overflow-x:auto; margin:26px 0}
+table{border-collapse:collapse; width:100%; font-size:.92rem; min-width:520px}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--rule-soft); vertical-align:top}
+th{font-family:"IBM Plex Mono",monospace; font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3); font-weight:500; border-bottom:1px solid var(--rule)}
+td code{font-family:"IBM Plex Mono",monospace; font-size:.84em; color:var(--ink-2)}
+.chip{
+  display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:.64rem;
+  letter-spacing:.1em; text-transform:uppercase; padding:2px 7px; border-radius:2px;
+  background:var(--accent-soft); color:var(--accent-ink); white-space:nowrap;
+}
+.chip.flag{background:var(--flag-soft); color:var(--flag)}
+
+ul.tight{margin:0 0 1.1em; padding-left:1.1em}
+ul.tight li{margin-bottom:.5em}
+ul.tight li::marker{color:var(--accent)}
+
+.pair{display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:26px; margin:26px 0}
+.card{background:var(--surface); border:1px solid var(--rule); border-radius:4px; padding:20px 22px; box-shadow:var(--shadow)}
+.card h3{margin-bottom:8px}
+.card p{font-size:.94rem; color:var(--ink-2); margin-bottom:0}
+
+
+.figure{max-width:820px; margin:34px 0 10px}
+.plate{
+  background:#FFFFFF; border:1px solid var(--rule); border-radius:5px;
+  padding:14px; box-shadow:var(--shadow); line-height:0;
+}
+.plate img{width:100%; height:auto; display:block; border-radius:2px}
+.figcap{
+  font-family:"IBM Plex Mono",monospace; font-size:.7rem; line-height:1.7;
+  color:var(--ink-3); margin-top:12px; letter-spacing:.02em; max-width:640px;
+}
+.figcap b{color:var(--ink-2); font-weight:500}
+footer{border-top:1px solid var(--rule); padding:34px 0 60px; color:var(--ink-3); font-size:.88rem}
+footer .mono{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.06em}
+
+.langbar{position:sticky; top:0; z-index:40; background:var(--surface); border-bottom:1px solid var(--rule)}
+.langbar .wrap{display:flex; justify-content:flex-end; padding:8px 28px}
+.langset{display:inline-flex; border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.langset button{
+  font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em;
+  text-transform:uppercase; padding:5px 12px; border:0; cursor:pointer;
+  background:var(--surface); color:var(--ink-3); transition:background .15s, color .15s;
+}
+.langset button + button{border-left:1px solid var(--rule)}
+.langset button:hover{color:var(--ink)}
+.langset button[aria-pressed="true"]{background:var(--accent); color:#fff}
+:root:not([data-lang="en"]) [data-langblock="en"]{display:none}
+:root[data-lang="en"] [data-langblock="es"]{display:none}
+@media (prefers-reduced-motion:reduce){.langset button{transition:none}}
+
+.hero{padding:88px 0 10px}
+.trajectory{
+  max-width:780px;
+  font-family:"IBM Plex Mono",monospace; font-size:.76rem; line-height:2.1;
+  color:var(--ink-2); letter-spacing:.01em; margin:20px 0 0;
+  padding:12px 0 0; border-top:1px solid var(--rule);
+}
+.trajectory span{color:var(--ink-3); font-size:.7rem; letter-spacing:.12em; text-transform:uppercase}
+.trajectory .arrow{color:var(--accent); font-size:.8rem; letter-spacing:0; padding:0 2px}
+.trajectory b{color:var(--ink); font-weight:600}
+.card h3 a{color:var(--ink); text-decoration:none; display:inline-block}
+.card h3 a:hover{color:var(--accent-ink); text-decoration:underline; text-decoration-thickness:1px}
+.card{transition:border-color .15s}
+.card:has(h3 a):hover{border-color:var(--accent)}
+.contact{font-family:"IBM Plex Mono",monospace; font-size:.86rem; letter-spacing:.02em; margin-top:18px}
+.contact a{color:var(--accent-ink)}
+.fine{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--ink-3); margin-top:14px}
+.stats .n{color:var(--accent-ink)}
+.stats .l{text-transform:none; letter-spacing:.02em; font-size:.72rem; line-height:1.45}
+.langbar{position:sticky; top:0; z-index:40; background:var(--surface); border-bottom:1px solid var(--rule)}
+.langbar .wrap{display:flex; justify-content:flex-end; padding:8px 28px}
+.langset{display:inline-flex; border:1px solid var(--rule); border-radius:3px; overflow:hidden}
+.langset button{font-family:"IBM Plex Mono",monospace; font-size:.68rem; letter-spacing:.14em;
+  text-transform:uppercase; padding:5px 12px; border:0; cursor:pointer; background:var(--surface);
+  color:var(--ink-3); transition:background .15s, color .15s}
+.langset button + button{border-left:1px solid var(--rule)}
+.langset button:hover{color:var(--ink)}
+.langset button[aria-pressed="true"]{background:var(--accent); color:#fff}
+:root:not([data-lang="en"]) [data-langblock="en"]{display:none}
+:root[data-lang="en"] [data-langblock="es"]{display:none}
+@media (prefers-reduced-motion:reduce){.langset button,.card{transition:none}}
+</style>
+
+<div class="langbar">
+  <div class="wrap">
+    <div class="langset" role="group" aria-label="Idioma / Language">
+      <button type="button" data-setlang="es" aria-pressed="true" lang="es">Español</button>
+      <button type="button" data-setlang="en" aria-pressed="false" lang="en">English</button>
+    </div>
+  </div>
+</div>
+
+<div data-langblock="es" lang="es"><header>
+  <div class="wrap head-inner">
+    <div class="mark">Carlos&nbsp;Paparoni</div>
+    <div class="head-meta">Ingeniero backend · Django · disponible para contratos</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="byline">Backend · Django · PostgreSQL · datos intensivos</div>
+    <h1>Construyo y reparo los sistemas Django que sostienen un negocio.</h1>
+    <p class="lede col">Dieciocho años escribiendo software. Los últimos tres dentro de una plataforma privada de administración de fondos de ~11.000 commits, y los últimos dos construyendo y operando un sistema de gestión clínica en producción. Empecé en 2008 con sitios en PHP, así que muy poco de lo que hay dentro de una base de código de quince años me sorprende.</p>
+    <p class="trajectory col"><span>2008</span> PHP a mano <span class="arrow">→</span> Drupal <span class="arrow">→</span> WordPress <span class="arrow">→</span> Laravel <span class="arrow">→</span> <b>Django · DRF · PostgreSQL</b> <span>hoy</span></p>
+    <p class="lede col" style="margin-top:22px">Trabajo con agentes de IA todos los días — y la habilidad que cobro no es generar código, sino el andamiaje que hace que ese código se sostenga.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">18</div><div class="l">años escribiendo software</div></div>
+    <div class="stat"><div class="n">922</div><div class="l">commits en un producto propio</div></div>
+    <div class="stat"><div class="n">~11k</div><div class="l">commits en la plataforma del cliente</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">idiomas en producción</div></div>
+  </div>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">En qué ayudo</p>
+      <h2>Cuatro frentes, un mismo perfil</h2>
+    </div>
+    <div class="pair">
+      <div class="card">
+        <h3>Backend Django y APIs</h3>
+        <p>Modelos, capa de servicios, REST con DRF, migraciones sobre bases con años encima. Sistemas multi-inquilino, permisos finos y reglas de negocio que no caben en un CRUD.</p>
+      </div>
+      <div class="card">
+        <h3>Rendimiento y datos</h3>
+        <p>Consultas N+1, planes que se derraman a disco, exportaciones que tumban un worker. Perfilado contra volcados reales, corrección y prueba de regresión que la deja asegurada.</p>
+      </div>
+      <div class="card">
+        <h3>Integraciones y plataforma</h3>
+        <p>Salesforce, Airtable, Google Calendar, WhatsApp Business, SFTP, Celery. Sincronizaciones que fallan en silencio y reportes de consistencia que las delatan.</p>
+      </div>
+      <div class="card">
+        <h3>Auditoría y acompañamiento</h3>
+        <p>Revisiones de seguridad de caja blanca, auditorías de rendimiento, estrategia de pruebas y CI. Diagnóstico por escrito, con hallazgos rastreados a código y priorizados.</p>
+      </div>
+    </div>
+    <div class="note col">
+      <div class="h">Cómo suelo trabajar</div>
+      <p>Prefiero <strong>acompañamiento recurrente</strong> a proyectos cerrados: una cuota mensual por disponibilidad, mantenimiento y mejoras continuas. Es más barato para quien contrata que rehacer el descubrimiento cada vez, y hace que me importe el sistema dentro de un año. También tomo proyectos acotados y auditorías puntuales.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">Trabajo seleccionado</p>
+      <h2>Qué he construido y qué he encontrado</h2>
+    </div>
+    <div class="pair">
+      <div class="card">
+        <h3><a href="/radiant-dental/">Radiant Dental →</a></h3>
+        <p>Sistema de gestión de clínicas dentales en producción. 922 commits, 17 apps de Django, 493 módulos y suites de prueba, información médica protegida. Construido y operado por una sola persona con agentes de IA. <em>Caso de estudio.</em></p>
+      </div>
+      <div class="card">
+        <h3><a href="/silent-failures/">Fallas silenciosas →</a></h3>
+        <p>Tres patrones de una plataforma financiera grande: un permiso desarmado por un renombre, una campaña sistemática contra N+1, y una compuerta de cobertura que aprobaba PRs sin pruebas. <em>Notas técnicas.</em></p>
+      </div>
+      <div class="card">
+        <h3><a href="https://github.com/kenshin23/klaviearn">Klaviearn →</a></h3>
+        <p>Entrenador de lectura musical al piano, diseñado desde el inicio para músicos con baja visión. La notación tradicional codifica el significado en diferencias de milímetros; aquí el renderizado es una variable, no una restricción. Código abierto.</p>
+      </div>
+      <div class="card">
+        <h3><a href="https://assemblercoding.com">AssemblerCoding →</a></h3>
+        <p>Mi estudio de una persona. Ahí vive el trabajo de producto para pequeñas empresas — aplicaciones de gestión y sitios — cuando lo que hace falta es un sistema completo y no un ingeniero incorporado a un equipo.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">Método</p>
+      <h2>Sobre trabajar con agentes de IA</h2>
+      <p>Escribo la mayor parte del código con agentes, y no lo escondo. Lo que separa una base de código asistida por IA que se sostiene de una que se desmorona no es el modelo: es lo que uno pone alrededor.</p>
+      <ul class="tight">
+        <li><strong>Convenciones escritas donde el agente las lee.</strong> Un archivo de reglas que empieza por la restricción que produce fallas silenciosas, no por preferencias de estilo.</li>
+        <li><strong>Especificación antes de generación.</strong> Los documentos de diseño se revisan contra los modelos que ya existen; algunos terminan diciendo "todavía no construyas esto".</li>
+        <li><strong>Límites arquitectónicos exigidos.</strong> Una capa de servicios evita que el código generado se desparrame a la capa equivocada.</li>
+        <li><strong>Las pruebas como criterio de aceptación.</strong> Generar es barato; la suite es lo que hace seguro aceptar.</li>
+        <li><strong>Una pasada adversarial sobre el trabajo propio.</strong> El código que uno no tecleó merece más escrutinio, no menos. Por eso audito lo que construyo.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">Contacto</p>
+      <h2>Conversemos</h2>
+      <p>Si tienes un sistema Django que duele — lento, frágil, o simplemente demasiado grande para el equipo que lo mantiene — escríbeme y te digo con franqueza si puedo ayudar.</p>
+      <p class="contact">
+        <a href="mailto:carlos@assemblercoding.com">carlos@assemblercoding.com</a> &nbsp;·&nbsp;
+        <a href="https://github.com/kenshin23">github.com/kenshin23</a> &nbsp;·&nbsp;
+        <a href="https://assemblercoding.com">assemblercoding.com</a>
+      </p>
+      <p class="fine">Trabajo en horario de América (UTC−4), remoto, con facturación a través de AssemblerCoding LLC.</p>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="mono">Carlos Paparoni · Ingeniero backend · Django, PostgreSQL, sistemas con datos intensivos</div>
+  </div>
+</footer>
+</div>
+<div data-langblock="en" lang="en"><header>
+  <div class="wrap head-inner">
+    <div class="mark">Carlos&nbsp;Paparoni</div>
+    <div class="head-meta">Backend engineer · Django · available for contract work</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="byline">Backend · Django · PostgreSQL · data-heavy systems</div>
+    <h1>I build and repair the Django systems a business actually runs on.</h1>
+    <p class="lede col">Eighteen years writing software. The last three inside a private fund-administration platform of ~11,000 commits, and the last two building and operating a clinical management system in production. I started in 2008 on hand-written PHP, so very little inside a fifteen-year-old codebase surprises me.</p>
+    <p class="trajectory col"><span>2008</span> hand-written PHP <span class="arrow">→</span> Drupal <span class="arrow">→</span> WordPress <span class="arrow">→</span> Laravel <span class="arrow">→</span> <b>Django · DRF · PostgreSQL</b> <span>today</span></p>
+    <p class="lede col" style="margin-top:22px">I work with AI agents every day — and the skill I charge for isn't generating code, it's the scaffolding that makes generated code hold together.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="n">18</div><div class="l">years writing software</div></div>
+    <div class="stat"><div class="n">922</div><div class="l">commits on a product I own</div></div>
+    <div class="stat"><div class="n">~11k</div><div class="l">commits on the client platform</div></div>
+    <div class="stat"><div class="n">3</div><div class="l">languages in production</div></div>
+  </div>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">What I help with</p>
+      <h2>Four fronts, one profile</h2>
+    </div>
+    <div class="pair">
+      <div class="card">
+        <h3>Django backend and APIs</h3>
+        <p>Models, a service layer, REST with DRF, migrations against databases with years on them. Multi-tenant systems, fine-grained permissions, and business rules that don't fit in a CRUD.</p>
+      </div>
+      <div class="card">
+        <h3>Performance and data</h3>
+        <p>N+1 queries, plans that spill to disk, exports that take down a worker. Profiling against real dumps, the fix, and the regression test that locks it in.</p>
+      </div>
+      <div class="card">
+        <h3>Integrations and platform</h3>
+        <p>Salesforce, Airtable, Google Calendar, WhatsApp Business, SFTP, Celery. Syncs that fail silently, and the consistency reports that catch them doing it.</p>
+      </div>
+      <div class="card">
+        <h3>Audits and advisory</h3>
+        <p>White-box security reviews, performance audits, test and CI strategy. A written diagnosis, with findings traced to code and ranked by what to do first.</p>
+      </div>
+    </div>
+    <div class="note col">
+      <div class="h">How I prefer to work</div>
+      <p>I favour <strong>ongoing retainers</strong> over fixed-scope projects: a monthly fee for availability, maintenance and continuous improvement. It's cheaper for the client than paying for discovery every time, and it means I care what the system looks like a year from now. I also take bounded projects and one-off audits.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">Selected work</p>
+      <h2>What I've built, and what I've found</h2>
+    </div>
+    <div class="pair">
+      <div class="card">
+        <h3><a href="/radiant-dental/">Radiant Dental →</a></h3>
+        <p>A dental practice management system in production. 922 commits, 17 Django apps, 493 test modules and suites, protected health information. Built and operated by one person with AI agents. <em>Case study.</em></p>
+      </div>
+      <div class="card">
+        <h3><a href="/silent-failures/">Silent Failures →</a></h3>
+        <p>Three patterns from a large financial platform: a permission disarmed by a rename, a systematic N+1 campaign, and a coverage gate that would pass a PR with no tests. <em>Engineering notes.</em></p>
+      </div>
+      <div class="card">
+        <h3><a href="https://github.com/kenshin23/klaviearn">Klaviearn →</a></h3>
+        <p>A piano sight-reading trainer, designed accessibility-first for low-vision musicians. Standard notation encodes meaning in millimetre differences; here rendering is a variable rather than a constraint. Open source.</p>
+      </div>
+      <div class="card">
+        <h3><a href="https://assemblercoding.com">AssemblerCoding →</a></h3>
+        <p>My one-person studio. That's where the product work for small businesses lives — management apps and sites — for when what's needed is a whole system rather than an engineer embedded in a team.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">Method</p>
+      <h2>On working with AI agents</h2>
+      <p>I write most of my code with agents, and I don't hide it. What separates an AI-assisted codebase that holds together from one that collapses isn't the model — it's what you put around it.</p>
+      <ul class="tight">
+        <li><strong>Conventions written where the agent will read them.</strong> A rules file that opens with the constraint which causes silent failure, not with style preferences.</li>
+        <li><strong>Specification before generation.</strong> Design docs reviewed against the models that already exist; some of them end up saying "don't build this yet".</li>
+        <li><strong>Architectural boundaries, enforced.</strong> A service layer keeps generated code from sprawling into the wrong layer.</li>
+        <li><strong>Tests as the acceptance gate.</strong> Generating is cheap; the suite is what makes it safe to accept.</li>
+        <li><strong>An adversarial pass over my own work.</strong> Code you didn't type deserves more scrutiny, not less. So I audit what I build.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <div class="col">
+      <p class="eyebrow">Contact</p>
+      <h2>Let's talk</h2>
+      <p>If you have a Django system that hurts — slow, brittle, or simply larger than the team maintaining it — write to me and I'll tell you honestly whether I can help.</p>
+      <p class="contact">
+        <a href="mailto:carlos@assemblercoding.com">carlos@assemblercoding.com</a> &nbsp;·&nbsp;
+        <a href="https://github.com/kenshin23">github.com/kenshin23</a> &nbsp;·&nbsp;
+        <a href="https://assemblercoding.com">assemblercoding.com</a>
+      </p>
+      <p class="fine">I work American hours (UTC−4), remotely, invoicing through AssemblerCoding LLC.</p>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="mono">Carlos Paparoni · Backend engineer · Django, PostgreSQL, data-heavy systems</div>
+  </div>
+</footer>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement, KEY = "cp-lang";
+  function apply(lang) {
+    root.setAttribute("data-lang", lang);
+    root.setAttribute("lang", lang);
+    document.querySelectorAll("[data-setlang]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.setlang === lang));
+    });
+  }
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  apply(saved || ((navigator.language || "es").toLowerCase().indexOf("es") === 0 ? "es" : "en"));
+  document.querySelectorAll("[data-setlang]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      apply(b.dataset.setlang);
+      try { localStorage.setItem(KEY, b.dataset.setlang); } catch (e) {}
+      window.scrollTo({ top: 0, behavior: "instant" });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
