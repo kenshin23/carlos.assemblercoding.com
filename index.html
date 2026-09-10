@@ -42,11 +42,22 @@ document.documentElement.setAttribute("data-lang",l||((navigator.language||"es")
 
 <div class="wrap">
   <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
     <div class="byline">Backend · Django · PostgreSQL · datos intensivos</div>
     <h1>Construyo y reparo los sistemas Django que sostienen un negocio.</h1>
     <p class="lede col">Dieciocho años escribiendo software. Los últimos tres dentro de una plataforma privada de administración de fondos de ~11.000 commits, y los últimos dos construyendo y operando un sistema de gestión clínica en producción. Empecé en 2008 con sitios en PHP, así que muy poco de lo que hay dentro de una base de código de quince años me sorprende.</p>
     <p class="trajectory col"><span>2008</span> PHP a mano <span class="arrow">→</span> Drupal <span class="arrow">→</span> WordPress <span class="arrow">→</span> CodeIgniter <span class="arrow">→</span> Erlang/Elixir <span class="arrow">→</span> Laravel <span class="arrow">→</span> <b>Flask · SQLAlchemy · Django · DRF · PostgreSQL</b> <span>hoy</span></p>
     <p class="lede col" style="margin-top:22px">Trabajo con agentes de IA todos los días — y la habilidad que cobro no es generar código, sino el andamiaje que hace que ese código se sostenga.</p>
+      </div>
+      <div class="terminal" aria-hidden="true">
+        <div class="term-bar">
+          <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+          <span class="term-title">carlos@assembler — zsh</span>
+        </div>
+        <div class="term-body"><code class="term-code"></code></div>
+      </div>
+    </div>
   </div>
 
   <div class="stats">
@@ -155,11 +166,22 @@ document.documentElement.setAttribute("data-lang",l||((navigator.language||"es")
 
 <div class="wrap">
   <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-copy">
     <div class="byline">Backend · Django · PostgreSQL · data-heavy systems</div>
     <h1>I build and repair the Django systems a business actually runs on.</h1>
     <p class="lede col">Eighteen years writing software. The last three inside a private fund-administration platform of ~11,000 commits, and the last two building and operating a clinical management system in production. I started in 2008 on hand-written PHP, so very little inside a fifteen-year-old codebase surprises me.</p>
     <p class="trajectory col"><span>2008</span> hand-written PHP <span class="arrow">→</span> Drupal <span class="arrow">→</span> WordPress <span class="arrow">→</span> CodeIgniter <span class="arrow">→</span> Erlang/Elixir <span class="arrow">→</span> Laravel <span class="arrow">→</span> <b>Flask · SQLAlchemy · Django · DRF · PostgreSQL</b> <span>today</span></p>
     <p class="lede col" style="margin-top:22px">I work with AI agents every day — and the skill I charge for isn't generating code, it's the scaffolding that makes generated code hold together.</p>
+      </div>
+      <div class="terminal" aria-hidden="true">
+        <div class="term-bar">
+          <span class="tdot"></span><span class="tdot"></span><span class="tdot"></span>
+          <span class="term-title">carlos@assembler — zsh</span>
+        </div>
+        <div class="term-body"><code class="term-code"></code></div>
+      </div>
+    </div>
   </div>
 
   <div class="stats">
@@ -283,5 +305,63 @@ document.documentElement.setAttribute("data-lang",l||((navigator.language||"es")
 })();
 </script>
 
+
+<script>
+(function () {
+  "use strict";
+  var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var SCENES = [
+    [
+      { t: "$ make goals TICKET=PROJ-1284", c: "t-prompt" },
+      { t: "  lines            +371 / -33", c: "" },
+      { t: "  deletion ratio   8.9%   goal 25%+   BELOW", c: "t-warn" },
+      { t: "  test % of net    73.7%  goal 65%+   OK", c: "t-ok" },
+      { t: "", c: "" },
+      { t: "› one genuine cleanup found in touched files", c: "t-dim" }
+    ],
+    [
+      { t: "$ pytest -k query_count_invariant", c: "t-prompt" },
+      { t: "  10 rows    3 queries   PASSED", c: "t-ok" },
+      { t: "  500 rows   3 queries   PASSED", c: "t-ok" },
+      { t: "", c: "" },
+      { t: "✓ query count does not scale with rows", c: "t-ok" },
+      { t: "› the N+1 stays fixed", c: "t-dim" }
+    ]
+  ];
+  function render(lines, upto) {
+    var out = "";
+    for (var i = 0; i < upto; i++) {
+      var l = lines[i];
+      out += l.t ? '<span class="' + l.c + '">' + l.t + "</span>\n" : "\n";
+    }
+    return out;
+  }
+  document.querySelectorAll(".term-code").forEach(function (code) {
+    if (reduce) {
+      code.innerHTML = render(SCENES[0], SCENES[0].length);
+      return;
+    }
+    var scene = 0, li = 0, done = "";
+    function typeLine() {
+      var lines = SCENES[scene];
+      if (li >= lines.length) {
+        setTimeout(function () {
+          scene = (scene + 1) % SCENES.length; li = 0; done = "";
+          code.innerHTML = '<span class="cursor"></span>';
+          setTimeout(typeLine, 400);
+        }, 3400);
+        return;
+      }
+      var line = lines[li], ci = 0, open = '<span class="' + line.c + '">';
+      (function typeChar() {
+        code.innerHTML = done + open + line.t.slice(0, ci) + "</span>" + '<span class="cursor"></span>';
+        if (ci < line.t.length) { ci++; setTimeout(typeChar, 14 + Math.random() * 22); }
+        else { done += line.t ? open + line.t + "</span>\n" : "\n"; li++; setTimeout(typeLine, line.t ? 200 : 80); }
+      })();
+    }
+    setTimeout(typeLine, 600);
+  });
+})();
+</script>
 </body>
 </html>

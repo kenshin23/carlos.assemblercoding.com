@@ -113,6 +113,37 @@ header{border-bottom:1px solid var(--line); background:rgba(6,9,18,.55); backdro
 .trajectory .arrow{color:var(--sky); padding:0 .15em}
 .trajectory b{color:var(--text); font-weight:600}
 
+
+/* ---------- hero: two columns with a terminal ---------- */
+.hero-inner{display:grid; gap:3rem; align-items:start}
+@media (min-width:1000px){
+  .hero-inner{grid-template-columns:1.08fr .92fr; gap:3.2rem; align-items:center}
+  .hero{--measure:100%; --measure-display:100%}
+}
+.hero-copy{min-width:0}
+
+.terminal{
+  border:1px solid var(--line-2); border-radius:var(--r); overflow:hidden;
+  background:linear-gradient(180deg,rgba(17,28,47,.9),rgba(8,13,24,.95));
+  box-shadow:0 40px 80px -40px rgba(0,0,0,.8), 0 0 0 1px rgba(108,180,255,.05);
+  backdrop-filter:blur(8px); min-width:0;
+}
+.term-bar{display:flex; align-items:center; gap:.5rem; padding:.7rem .9rem;
+  border-bottom:1px solid var(--line); background:rgba(255,255,255,.02)}
+.tdot{width:11px; height:11px; border-radius:50%; background:#2a3650}
+.tdot:nth-child(1){background:#ff5f57} .tdot:nth-child(2){background:#febc2e} .tdot:nth-child(3){background:#28c840}
+.term-title{margin-left:auto; font-family:var(--font-mono); font-size:.74rem; color:var(--faint)}
+.term-body{padding:1.1rem 1.15rem; min-height:290px}
+.term-body code{font-family:var(--font-mono); font-size:.79rem; line-height:1.9; color:#c9d6ef; white-space:pre-wrap; display:block}
+.t-prompt{color:var(--sky)}
+.t-ok{color:#28c840}
+.t-warn{color:#febc2e}
+.t-dim{color:var(--faint)}
+.cursor{display:inline-block; width:8px; height:1.05em; background:var(--sky); vertical-align:-2px; animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.cursor{animation:none}}
+@media (max-width:520px){.term-body{min-height:0} .term-body code{font-size:.72rem}}
+
 /* ---------- stats ---------- */
 .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin:3rem 0}
 .stat{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:1.1rem 1.2rem;
